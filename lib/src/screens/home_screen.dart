@@ -242,22 +242,24 @@ class _LoginDetailsState extends State<LoginDetails> {
   }
 
   Widget tabUI(List<UserModel> list) {
-    return SingleChildScrollView(
-      //  color: Colors.black,
-      child: Column(
-        children: [
-          SizedBox(
-            // height: MediaQuery.of(context).size.height / 1.5,
-            child: Wrap(
-              //direction: ,
+    return list.isEmpty
+        ? CircularProgressIndicator()
+        : SingleChildScrollView(
+            //  color: Colors.black,
+            child: Column(
               children: [
-                for (UserModel user in list) loginScreenUI(user),
+                SizedBox(
+                  // height: MediaQuery.of(context).size.height / 1.5,
+                  child: Wrap(
+                    //direction: ,
+                    children: [
+                      for (UserModel user in list) loginScreenUI(user),
+                    ],
+                  ),
+                ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
+          );
   }
 
   Widget loginScreenUI(UserModel user) {
