@@ -14,8 +14,21 @@ class _LoginDetailsState extends State<LoginDetails> {
   late ThemeData themeData;
   bool isLoading = false;
   List<UserModel> list = [];
+  List<UserModel> totalList = [];
+  List<UserModel> mountainList = [];
+  List<UserModel> birdList = [];
+  List<UserModel> animalsList = [];
+  List<UserModel> foodList = [];
   List<UserModel> suggestionList = [];
 
+  List<String> tabList = [
+    'All',
+    'Mountains',
+    'Birds',
+    'Animals',
+    'Foods',
+    'Other',
+  ];
   TextEditingController searchDistributorController = TextEditingController();
   FocusNode searchDistributorFocusNode = FocusNode();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -26,9 +39,44 @@ class _LoginDetailsState extends State<LoginDetails> {
   }
 
   Future<void> fetchData() async {
-    list = await UserService.instance.getCurrentUserLoginDetails();
+    // suggestionList.clear();
+    for (String tab in tabList) {
+      if (tab == 'All') {
+        totalList = await UserService.instance.getCurrentUserLoginDetails();
+        suggestionList = totalList;
+      } else if (tab == 'Mountains') {
+        totalList = await UserService.instance.getCurrentUserLoginDetails();
+        mountainList = totalList;
+        mountainList.removeWhere(
+          (element) => element.type != 'mountain',
+        );
+        suggestionList = mountainList;
+      } else if (tab == 'Birds') {
+        totalList = await UserService.instance.getCurrentUserLoginDetails();
+        birdList = totalList;
+        birdList.removeWhere(
+          (element) => element.type != 'bird',
+        );
+        suggestionList = birdList;
+      } else if (tab == 'Animals') {
+        totalList = await UserService.instance.getCurrentUserLoginDetails();
+        animalsList = totalList;
+        animalsList.removeWhere(
+          (element) => element.type != 'animal',
+        );
+        suggestionList = animalsList;
+      } else if (tab == 'Food') {
+        totalList = await UserService.instance.getCurrentUserLoginDetails();
+        foodList = totalList;
+        foodList.removeWhere(
+          (element) => element.type != 'food',
+        );
+        suggestionList = foodList;
+      } else {
+        totalList = await UserService.instance.getCurrentUserLoginDetails();
+      }
+    }
 
-    print(list.length);
     setState(() {});
   }
 
@@ -81,6 +129,10 @@ class _LoginDetailsState extends State<LoginDetails> {
                 unselectedLabelStyle: themeData.textTheme.titleSmall!
                     .copyWith(color: Colors.grey),
                 isScrollable: true,
+                onTap: (int i) {
+                  print(i);
+                  fetchData();
+                },
                 tabs: const [
                   Tab(
                     text: 'All',
@@ -110,12 +162,12 @@ class _LoginDetailsState extends State<LoginDetails> {
             width: MediaQuery.of(context).size.width,
             child: TabBarView(
               children: <Widget>[
-                tabUI(),
-                tabUI(),
-                tabUI(),
-                tabUI(),
-                tabUI(),
-                tabUI(),
+                tabUI(totalList),
+                tabUI(mountainList),
+                tabUI(birdList),
+                tabUI(animalsList),
+                tabUI(foodList),
+                tabUI(list),
               ],
             ),
           ),
@@ -125,29 +177,39 @@ class _LoginDetailsState extends State<LoginDetails> {
   }
 
   Widget searchDistributorFilterTextField() {
-    return Container(
-      color: Colors.grey,
-      padding: const EdgeInsets.only(left: 5, right: 5),
-      child: ListTile(
-        tileColor: Colors.grey,
-        leading: const Icon(Icons.search),
-        title: TextFormField(
-          focusNode: searchDistributorFocusNode,
-          controller: searchDistributorController,
-          style: const TextStyle(color: Colors.white),
-          keyboardType: TextInputType.text,
-          textInputAction: TextInputAction.search,
-          decoration: const InputDecoration(
-            filled: false,
-            isDense: true,
-            border: InputBorder.none,
-            disabledBorder: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            errorBorder: InputBorder.none,
-            hintText: "Enter Keyword..",
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Container(
+        padding: const EdgeInsets.only(left: 10, right: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: Colors.grey),
+          borderRadius: BorderRadius.all(
+            Radius.circular(5),
           ),
-          onChanged: (value) => {_runFilter(value)},
+        ),
+        child: ListTile(
+          tileColor: Colors.grey,
+          trailing: const Icon(Icons.search),
+          iconColor: Colors.black,
+          title: TextFormField(
+            focusNode: searchDistributorFocusNode,
+            controller: searchDistributorController,
+            style: const TextStyle(color: Colors.black),
+            keyboardType: TextInputType.text,
+            textInputAction: TextInputAction.search,
+            decoration: const InputDecoration(
+              filled: false,
+              isDense: true,
+              border: InputBorder.none,
+              disabledBorder: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              errorBorder: InputBorder.none,
+              hintText: "Enter Keyword..",
+            ),
+            onChanged: (value) => {_runFilter(value)},
+          ),
         ),
       ),
     );
@@ -155,90 +217,53 @@ class _LoginDetailsState extends State<LoginDetails> {
 
   void _runFilter(String enteredKeyword) async {
     if (enteredKeyword.isEmpty) {
-      list;
+      totalList;
       setState(() {});
       return;
     }
 
-    var suggestions = list.where(
+    var suggestions = totalList.where(
       (element) {
         var type = element.type.toLowerCase();
-
+        print(element.type);
         var input = enteredKeyword.toLowerCase();
+        print(enteredKeyword);
         return type.contains(input);
-        // email.contains(input) ||
-        // phone.contains(input);
       },
     ).toList();
 
     setState(() {
       if (enteredKeyword.isNotEmpty) {
         suggestionList = suggestions;
+      } else {
+        fetchData();
       }
     });
   }
 
-  Widget tabUI() {
-    return Container(
+  Widget tabUI(List<UserModel> list) {
+    return SingleChildScrollView(
       //  color: Colors.black,
       child: Column(
         children: [
           SizedBox(
-            height: MediaQuery.of(context).size.height / 1.5,
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  //     for (UserModel user in list) loginScreenUI(user),
-                ],
-              ),
+            // height: MediaQuery.of(context).size.height / 1.5,
+            child: Wrap(
+              //direction: ,
+              children: [
+                for (UserModel user in list) loginScreenUI(user),
+              ],
             ),
           ),
-
-          // the save button can be implemented if required
-
-          // list.isNotEmpty
-          //     ? Container(
-          //         padding: EdgeInsets.only(
-          //             left: MediaQuery.of(context).size.width / 10,
-          //             right: MediaQuery.of(context).size.width / 10),
-          //         child: Padding(
-          //           padding: const EdgeInsets.all(8.0),
-          //           child: ButtonWidget(text: 'SAVE', onClicked: () {}),
-          //         ))
-          //     : const SizedBox()
         ],
       ),
     );
   }
 
   Widget loginScreenUI(UserModel user) {
-    return Stack(
-      children: [
-        Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(
-                  left: 25, bottom: 10, top: 10, right: 25),
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: const BoxDecoration(
-                  color: Colors.white10,
-                  borderRadius: BorderRadius.all(Radius.circular(10)),
-                ),
-                child: Row(
-                  children: [
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
+    return Container(
+        height: MediaQuery.of(context).size.height / 5,
+        width: MediaQuery.of(context).size.width / 3,
+        child: Image.asset(user.image));
   }
 }
